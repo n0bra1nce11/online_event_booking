@@ -1,0 +1,1054 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EventsNepal - Admin Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: #f9f9f9;
+            color: #1a3c34;
+            line-height: 1.6;
+            display: flex;
+        }
+
+        header {
+            background: #1a3c34;
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logo i {
+            font-size: 2rem;
+            color: #f4d03f;
+        }
+
+        .logo span {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .logout-btn {
+            background: #f4d03f;
+            color: #1a3c34;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+
+        .logout-btn:hover {
+            background: #d4a017;
+        }
+
+        .nav-bar {
+            background: #1a3c34;
+            width: 250px;
+            height: 100vh;
+            position: fixed;
+            top: 80px;
+            left: 0;
+            padding-top: 1rem;
+            z-index: 999;
+        }
+
+        .nav-bar ul {
+            list-style: none;
+        }
+
+        .nav-bar li {
+            padding: 1rem 2rem;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transition: background 0.3s;
+        }
+
+        .nav-bar li:hover {
+            background: #2e5b52;
+        }
+
+        .nav-bar li.active {
+            background: #f4d03f;
+            color: #1a3c34;
+        }
+
+        .nav-bar i {
+            font-size: 1.2rem;
+        }
+
+        .dashboard {
+            margin-top: 80px;
+            margin-left: 250px;
+            padding: 2rem;
+            width: calc(100% - 250px);
+        }
+
+        h2 {
+            color: #1a3c34;
+            margin-bottom: 1.5rem;
+            font-size: 1.8rem;
+        }
+
+        .section {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #1a3c34;
+            font-weight: bold;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #f4d03f;
+            box-shadow: 0 0 5px rgba(244, 208, 63, 0.5);
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #f4d03f 30%, #d4a017 100%);
+            color: #1a3c34;
+            padding: 0.75rem 1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 80%;
+            max-width: 400px;
+            margin: 0.5rem auto;
+            font-size: 1rem;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: transform 0.3s, box-shadow 0.3s;
+            animation: pulseGlow 2s infinite ease-in-out;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 5px rgba(244, 208, 63, 0.4); }
+            50% { box-shadow: 0 0 20px rgba(244, 208, 63, 0.8); }
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+            background: linear-gradient(45deg, #d4a017 30%, #f4d03f 100%);
+            box-shadow: 0 0 25px rgba(244, 208, 63, 0.9);
+        }
+
+        .btn:hover i {
+            animation: bounce 0.5s ease;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            box-shadow: none;
+            animation: none;
+        }
+
+        .btn i {
+            font-size: 1.1rem;
+        }
+
+        .spinner {
+            display: none;
+            border: 4px solid #ffffff;
+            border-top: 4px solid #1a3c34;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        @keyframes spin {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        .btn.loading .spinner {
+            display: block;
+        }
+
+        .btn.loading span,
+        .btn.loading i {
+            visibility: hidden;
+        }
+
+        #ticket-result, #event-result {
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            color: #1a3c34;
+        }
+
+        #ticket-result.success, #event-result.success {
+            color: #28a745;
+        }
+
+        #ticket-result.error, #event-result.error {
+            color: #dc3545;
+        }
+
+        .ticket-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            align-items: flex-start;
+            margin-top: 1rem;
+        }
+
+        .ticket-details {
+            flex: 1;
+            min-width: 200px;
+            background: #f9f9f9;
+            padding: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .ticket-info {
+            flex: 1;
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 0.5rem 1rem;
+        }
+
+        .ticket-info p {
+            margin: 0;
+            font-size: 0.95rem;
+            display: contents;
+        }
+
+        .ticket-info p.success {
+            font-weight: bold;
+            font-size: 1rem;
+            grid-column: span 2;
+        }
+
+        .ticket-info .label {
+            font-weight: bold;
+            color: #1a3c34;
+        }
+
+        .ticket-info .value {
+            color: #333;
+        }
+
+        .ticket-qr {
+            text-align: center;
+            min-width: 128px;
+        }
+
+        .ticket-qr img {
+            border: 2px solid #1a3c34;
+            border-radius: 5px;
+        }
+
+        .button-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            min-width: 150px;
+            align-items: flex-start;
+        }
+
+        .button-container .btn {
+            width: 100%;
+            max-width: 200px;
+            padding: 0.6rem 1rem;
+        }
+
+        .email-input {
+            width: 100%;
+            max-width: 200px;
+            padding: 0.5rem;
+            margin-top: 0.5rem;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
+
+        .email-input:focus {
+            outline: none;
+            border-color: #f4d03f;
+            box-shadow: 0 0 5px rgba(244, 208, 63, 0.5);
+        }
+
+        .input-container {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: flex-start;
+        }
+
+        #qr-scanner {
+            margin: 1rem 0;
+            text-align: center;
+        }
+
+        #video {
+            width: 100%;
+            max-width: 400px;
+            border-radius: 10px;
+            border: 2px solid #1a3c34;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+
+        .stat-card {
+            background: #1a3c34;
+            color: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card p {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #f4d03f;
+        }
+
+        @media (max-width: 768px) {
+            .nav-bar {
+                width: 100%;
+                height: auto;
+                top: 60px;
+                padding: 0.5rem;
+            }
+
+            .nav-bar ul {
+                display: flex;
+                justify-content: space-around;
+            }
+
+            .nav-bar li {
+                padding: 0.5rem;
+                font-size: 0.9rem;
+            }
+
+            .dashboard {
+                margin-left: 0;
+                margin-top: 120px;
+                width: 100%;
+                padding: 1rem;
+            }
+
+            .section {
+                padding: 1.5rem;
+            }
+
+            h2 {
+                font-size: 1.5rem;
+            }
+
+            .logo span {
+                font-size: 1.2rem;
+            }
+
+            .logout-btn {
+                padding: 0.5rem;
+                font-size: 0.9rem;
+            }
+
+            .btn {
+                width: 90%;
+                max-width: 300px;
+                padding: 0.6rem 0.8rem;
+                font-size: 0.85rem;
+            }
+
+            .button-container {
+                align-items: center;
+                width: 100%;
+            }
+
+            .button-container .btn {
+                width: 100%;
+                max-width: 250px;
+            }
+
+            .email-input {
+                max-width: 250px;
+            }
+
+            .ticket-container {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .ticket-details {
+                min-width: 100%;
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .ticket-info {
+                grid-template-columns: 1fr;
+            }
+
+            .ticket-info p {
+                display: flex;
+                justify-content: space-between;
+            }
+
+            .ticket-qr {
+                margin: 1rem 0;
+            }
+
+            #video {
+                max-width: 300px;
+            }
+
+            .input-container {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .btn {
+                width: 95%;
+                max-width: 250px;
+                padding: 0.5rem 0.7rem;
+                font-size: 0.8rem;
+            }
+
+            .button-container .btn {
+                width: 100%;
+                max-width: 200px;
+            }
+
+            .email-input {
+                max-width: 200px;
+            }
+
+            .btn i {
+                font-size: 1rem;
+            }
+
+            .logo i {
+                font-size: 1.5rem;
+            }
+
+            .logo span {
+                font-size: 1rem;
+            }
+
+            h2 {
+                font-size: 1.3rem;
+            }
+
+            .ticket-info p {
+                font-size: 0.85rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <i class="fa-solid fa-calendar-star"></i>
+            <span>EventsNepal</span>
+        </div>
+        <button class="logout-btn" id="logout-btn">Logout <i class="fas fa-sign-out-alt"></i></button>
+    </header>
+
+    <nav class="nav-bar">
+        <ul>
+            <li class="active" data-section="validate-ticket"><i class="fas fa-ticket-alt"></i> Validate Ticket</li>
+            <li data-section="qr-scanner"><i class="fas fa-qrcode"></i> Scan QR Code</li>
+            <li data-section="create-event"><i class="fas fa-calendar-plus"></i> Create Event</li>
+            <li data-section="event-stats"><i class="fas fa-chart-bar"></i> Event Statistics</li>
+        </ul>
+    </nav>
+
+    <section class="dashboard">
+        <div class="section active" id="validate-ticket">
+            <h2>Validate Ticket</h2>
+            <div class="form-group">
+                <label for="bookingId">Booking ID</label>
+                <input type="text" id="bookingId" placeholder="Enter Booking ID (e.g., EVENTNP_01)" />
+            </div>
+            <div class="input-container">
+                <button class="btn" id="validate-btn"><i class="fas fa-ticket-alt"></i> <span>Check Ticket</span> <div class="spinner"></div></button>
+                <button class="btn" id="clear-btn"><i class="fas fa-eraser"></i> <span>Clear</span></button>
+            </div>
+            <div class="ticket-container">
+                <div id="ticket-result" class="ticket-details">
+                    <div class="ticket-info"></div>
+                    <div class="ticket-qr" id="qr-code"></div>
+                </div>
+                <div id="button-container" class="button-container"></div>
+            </div>
+        </div>
+
+        <div class="section" id="qr-scanner">
+            <h2>Scan QR Code</h2>
+            <div id="qr-scanner">
+                <video id="video" autoplay></video>
+                <button class="btn" id="start-scanner"><i class="fas fa-qrcode"></i> Start Scanner</button>
+                <button class="btn" id="stop-scanner" style="display: none;"><i class="fas fa-stop"></i> Stop Scanner</button>
+            </div>
+            <div id="ticket-result"></div>
+        </div>
+
+        <div class="section" id="create-event">
+            <h2>Create New Event</h2>
+            <div class="form-group">
+                <label for="eventName">Event Name</label>
+                <input type="text" id="eventName" placeholder="Enter event name" />
+            </div>
+            <div class="form-group">
+                <label for="eventDate">Event Date</label>
+                <input type="datetime-local" id="eventDate" />
+            </div>
+            <div class="form-group">
+                <label for="eventDescription">Description</label>
+                <textarea id="eventDescription" placeholder="Enter event description" rows="4"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="eventTotalTickets">Total Tickets</label>
+                <input type="number" id="eventTotalTickets" placeholder="Enter total number of tickets" min="1" />
+            </div>
+            <div class="form-group">
+                <label for="eventBanner">Banner Image</label>
+                <input type="file" id="eventBanner" accept="image/*" />
+            </div>
+            <button class="btn" id="create-event-btn"><i class="fas fa-calendar-plus"></i> Create Event</button>
+            <div id="event-result"></div>
+        </div>
+
+        <div class="section" id="event-stats">
+            <h2>Event Statistics</h2>
+            <div class="stats-grid"></div>
+        </div>
+    </section>
+
+    <script>
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+            return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+            if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+                try {
+                    var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                    var firstSheetName = workbook.SheetNames[0];
+                    var worksheet = workbook.Sheets[firstSheetName];
+                    var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                    var filteredData = jsonData.filter(row => row.some(filledCell));
+                    var headerRowIndex = filteredData.findIndex((row, index) =>
+                        row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                    );
+                    if (headerRowIndex === -1 || headerRowIndex > 25) {
+                        headerRowIndex = 0;
+                    }
+                    var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex));
+                    csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                    return csv;
+                } catch (e) {
+                    console.error(e);
+                    return "";
+                }
+            }
+            return gk_fileData[filename] || "";
+        }
+
+        let stream = null;
+
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(section => section.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+            document.querySelectorAll('.nav-bar li').forEach(li => li.classList.remove('active'));
+            document.querySelector(`.nav-bar li[data-section="${sectionId}"]`).classList.add('active');
+            if (sectionId === 'event-stats') updateStats();
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = 'admin.html';
+        }
+
+        function setLoadingState(buttonId, isLoading) {
+            const btn = document.getElementById(buttonId);
+            btn.disabled = isLoading;
+            btn.classList.toggle('loading', isLoading);
+        }
+
+        function validateTicket() {
+            setLoadingState('validate-btn', true);
+            const bookingId = document.getElementById('bookingId').value.trim();
+            const ticketInfoDiv = document.querySelector('.ticket-info');
+            const qrCodeDiv = document.getElementById('qr-code');
+            const buttonContainer = document.getElementById('button-container');
+            const token = localStorage.getItem('token');
+
+            if (!bookingId) {
+                ticketInfoDiv.innerHTML = '<p class="error"><i class="fas fa-exclamation-circle"></i> Please enter a booking ID.</p>';
+                qrCodeDiv.innerHTML = '';
+                buttonContainer.innerHTML = '';
+                setLoadingState('validate-btn', false);
+                return;
+            }
+
+            fetch('/api/tickets/validate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ booking_id: bookingId, private_key: 'server-side-validation' })
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.json();
+            })
+            .then(data => {
+                if (data.valid) {
+                    ticketInfoDiv.innerHTML = `
+                        <p class="success"><i class="fas fa-ticket-alt"></i> Ticket found!</p>
+                        <p><span class="label">Event:</span> <span class="value">${data.event}</span></p>
+                        <p><span class="label">Name:</span> <span class="value">${data.booking.full_name}</span></p>
+                        <p><span class="label">Email:</span> <span class="value">${data.booking.email_address}</span></p>
+                        <p><span class="label">Tickets:</span> <span class="value">${data.booking.ticket_quantity}</span></p>
+                        <p><span class="label">Status:</span> <span class="value">${data.booking.consumed ? 'Consumed' : 'Active'}</span></p>
+                    `;
+                    const buttons = data.booking.consumed
+                        ? ''
+                        : `
+                            <div class="form-group">
+                                <label for="emailInput">Email for Ticket</label>
+                                <input type="email" class="email-input" id="emailInput" placeholder="Enter email" value="${data.booking.email_address}" />
+                            </div>
+                            <button class="btn" data-action="send-email" data-booking-id="${bookingId}" data-event="${data.event}"><i class="fas fa-envelope"></i> Send Ticket Email</button>
+                            <button class="btn" data-action="check-in" data-booking-id="${bookingId}"><i class="fas fa-check"></i> Check In</button>
+                        `;
+                    buttonContainer.innerHTML = buttons;
+                    qrCodeDiv.innerHTML = '';
+                    new QRCode(qrCodeDiv, {
+                        text: `Booking ID: ${bookingId}`,
+                        width: 128,
+                        height: 128,
+                        colorDark: "#1a3c34",
+                        colorLight: "#ffffff",
+                        correctLevel: QRCode.CorrectLevel.H
+                    });
+                } else {
+                    ticketInfoDiv.innerHTML = `<p class="error"><i class="fas fa-exclamation-circle"></i> ${data.error || 'Invalid Booking ID'}</p>`;
+                    qrCodeDiv.innerHTML = '';
+                    buttonContainer.innerHTML = '';
+                }
+                setLoadingState('validate-btn', false);
+            })
+            .catch(error => {
+                ticketInfoDiv.innerHTML = '<p class="error"><i class="fas fa-exclamation-circle"></i> Server error. Please try again.</p>';
+                qrCodeDiv.innerHTML = '';
+                buttonContainer.innerHTML = '';
+                setLoadingState('validate-btn', false);
+                console.error('Validate Ticket Error:', error);
+            });
+        }
+
+        function clearTicketForm() {
+            document.getElementById('bookingId').value = '';
+            document.querySelector('.ticket-info').innerHTML = '';
+            document.getElementById('qr-code').innerHTML = '';
+            document.getElementById('button-container').innerHTML = '';
+        }
+
+        function sendTicketEmail(bookingId, eventName) {
+            setLoadingState('validate-btn', true);
+            const email = document.getElementById('emailInput')?.value.trim();
+            const ticketInfoDiv = document.querySelector('.ticket-info');
+            const token = localStorage.getItem('token');
+
+            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                ticketInfoDiv.innerHTML = '<p class="error"><i class="fas fa-exclamation-circle"></i> Please enter a valid email address.</p>';
+                setLoadingState('validate-btn', false);
+                return;
+            }
+
+            fetch('/api/tickets/send-email', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ booking_id: bookingId, email })
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.json();
+            })
+            .then(data => {
+                ticketInfoDiv.innerHTML = `<p class="success"><i class="fas fa-envelope"></i> ${data.message}</p>`;
+                document.getElementById('qr-code').innerHTML = '';
+                document.getElementById('button-container').innerHTML = '';
+                setLoadingState('validate-btn', false);
+                setTimeout(() => validateTicket(), 2000);
+            })
+            .catch(error => {
+                ticketInfoDiv.innerHTML = '<p class="error"><i class="fas fa-exclamation-circle"></i> Server error. Please try again.</p>';
+                setLoadingState('validate-btn', false);
+                console.error('Send Ticket Email Error:', error);
+            });
+        }
+
+        function checkInTicket(bookingId) {
+            setLoadingState('validate-btn', true);
+            const ticketInfoDiv = document.querySelector('.ticket-info');
+            const token = localStorage.getItem('token');
+
+            fetch('/api/tickets/check-in', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ booking_id: bookingId })
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.json();
+            })
+            .then(data => {
+                ticketInfoDiv.innerHTML = `<p class="success"><i class="fas fa-check-circle"></i> ${data.message}</p>`;
+                document.getElementById('qr-code').innerHTML = '';
+                document.getElementById('button-container').innerHTML = '';
+                setLoadingState('validate-btn', false);
+                setTimeout(() => validateTicket(), 2000);
+            })
+            .catch(error => {
+                ticketInfoDiv.innerHTML = '<p class="error"><i class="fas fa-exclamation-circle"></i> Server error. Please try again.</p>';
+                setLoadingState('validate-btn', false);
+                console.error('Check In Ticket Error:', error);
+            });
+        }
+
+        async function startScanner() {
+            const video = document.getElementById('video');
+            const startBtn = document.getElementById('start-scanner');
+            const stopBtn = document.getElementById('stop-scanner');
+            const resultDiv = document.getElementById('ticket-result');
+
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                video.srcObject = stream;
+                startBtn.style.display = 'none';
+                stopBtn.style.display = 'inline-flex';
+                video.play();
+                requestAnimationFrame(tick);
+            } catch (err) {
+                resultDiv.innerHTML = '<p class="error"><i class="fas fa-exclamation-circle"></i> Unable to access camera. Please ensure camera permissions are granted.</p>';
+                console.error('Start Scanner Error:', err);
+            }
+        }
+
+        function stopScanner() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+            document.getElementById('video').srcObject = null;
+            document.getElementById('start-scanner').style.display = 'inline-flex';
+            document.getElementById('stop-scanner').style.display = 'none';
+            document.getElementById('ticket-result').innerHTML = '';
+        }
+
+        function tick() {
+            const video = document.getElementById('video');
+            const resultDiv = document.getElementById('ticket-result');
+            const token = localStorage.getItem('token');
+
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const code = jsQR(imageData.data, imageData.width, imageData.height);
+
+                if (code) {
+                    const bookingId = code.data.match(/Booking ID: (EVENTNP_\d{2})/)?.[1];
+                    if (bookingId) {
+                        fetch('/api/tickets/scan', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify({ booking_id: bookingId })
+                        })
+                        .then(response => {
+                            if (!response.ok) throw new Error('Network response was not ok');
+                            return response.json();
+                        })
+                        .then(data => {
+                            if (data.message) {
+                                resultDiv.innerHTML = `
+                                    <p class="success"><i class="fas fa-check-circle"></i> ${data.message}</p>
+                                    <p>Event: ${data.event}</p>
+                                    <p>Name: ${data.booking.full_name}</p>
+                                    <p>Email: ${data.booking.email_address}</p>
+                                    <p>Tickets: ${data.booking.ticket_quantity}</p>
+                                `;
+                                stopScanner();
+                            } else {
+                                resultDiv.innerHTML = `<p class="error"><i class="fas fa-exclamation-circle"></i> ${data.error || 'Invalid QR code'}</p>`;
+                            }
+                        })
+                        .catch(error => {
+                            resultDiv.innerHTML = '<p class="error"><i class="fas fa-exclamation-circle"></i> Server error. Please try again.</p>';
+                            console.error('QR Scan Error:', error);
+                        });
+                    } else {
+                        resultDiv.innerHTML = `<p class="error"><i class="fas fa-exclamation-circle"></i> Invalid QR code.</p>`;
+                    }
+                }
+            }
+            if (stream) requestAnimationFrame(tick);
+        }
+
+        function createEvent() {
+            setLoadingState('create-event-btn', true);
+            const eventName = document.getElementById('eventName').value.trim();
+            const eventDate = document.getElementById('eventDate').value;
+            const eventDescription = document.getElementById('eventDescription').value.trim();
+            const eventTotalTickets = document.getElementById('eventTotalTickets').value.trim();
+            const eventBanner = document.getElementById('eventBanner').files[0];
+            const resultDiv = document.getElementById('event-result');
+            const token = localStorage.getItem('token');
+
+            if (!eventName || !eventDate || !eventDescription || !eventTotalTickets || !eventBanner) {
+                resultDiv.innerHTML = '<p class="error"><i class="fas fa-exclamation-circle"></i> Please fill all fields and upload a banner image.</p>';
+                setLoadingState('create-event-btn', false);
+                return;
+            }
+
+            const totalTickets = parseInt(eventTotalTickets);
+            if (isNaN(totalTickets) || totalTickets <= 0) {
+                resultDiv.innerHTML = '<p class="error"><i class="fas fa-exclamation-circle"></i> Total tickets must be a positive number.</p>';
+                setLoadingState('create-event-btn', false);
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('name', eventName);
+            formData.append('date', new Date(eventDate).toISOString());
+            formData.append('description', eventDescription);
+            formData.append('total_tickets', totalTickets);
+            formData.append('banner', eventBanner);
+
+            fetch('/api/events/create', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` },
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.json();
+            })
+            .then(data => {
+                if (data.id) {
+                    resultDiv.innerHTML = `<p class="success"><i class="fas fa-check-circle"></i> Event "${eventName}" created successfully!</p>`;
+                    document.getElementById('eventName').value = '';
+                    document.getElementById('eventDate').value = '';
+                    document.getElementById('eventDescription').value = '';
+                    document.getElementById('eventTotalTickets').value = '';
+                    document.getElementById('eventBanner').value = '';
+                    setTimeout(() => { resultDiv.innerHTML = ''; }, 2000);
+                } else {
+                    resultDiv.innerHTML = `<p class="error"><i class="fas fa-exclamation-circle"></i> ${data.error || 'Failed to create event'}</p>`;
+                }
+                setLoadingState('create-event-btn', false);
+            })
+            .catch(error => {
+                resultDiv.innerHTML = '<p class="error"><i class="fas fa-exclamation-circle"></i> Server error. Please try again.</p>';
+                setLoadingState('create-event-btn', false);
+                console.error('Create Event Error:', error);
+            });
+        }
+
+        function updateStats() {
+            const statsGrid = document.querySelector('.stats-grid');
+            const token = localStorage.getItem('token');
+
+            fetch('/api/events/stats', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.json();
+            })
+            .then(data => {
+                statsGrid.innerHTML = '';
+                data.forEach(event => {
+                    const statCard = document.createElement('div');
+                    statCard.className = 'stat-card';
+                    statCard.innerHTML = `
+                        <h3>${event.name}</h3>
+                        <p>Total Tickets: ${event.total_tickets}</p>
+                        <p>Tickets Sold: ${event.tickets_sold}</p>
+                        <p>Total Sales: NPR ${event.total_sales}</p>
+                    `;
+                    statsGrid.appendChild(statCard);
+                });
+            })
+            .catch(error => {
+                statsGrid.innerHTML = '<p class="error"><i class="fas fa-exclamation-circle"></i> Failed to load statistics.</p>';
+                console.error('Update Stats Error:', error);
+            });
+        }
+
+        // Event Listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!localStorage.getItem('token')) {
+                window.location.href = 'admin.html';
+                return;
+            }
+
+            document.querySelectorAll('.nav-bar li').forEach(li => {
+                li.addEventListener('click', () => showSection(li.dataset.section));
+            });
+
+            document.getElementById('logout-btn').addEventListener('click', logout);
+            document.getElementById('validate-btn').addEventListener('click', validateTicket);
+            document.getElementById('clear-btn').addEventListener('click', clearTicketForm);
+            document.getElementById('start-scanner').addEventListener('click', startScanner);
+            document.getElementById('stop-scanner').addEventListener('click', stopScanner);
+            document.getElementById('create-event-btn').addEventListener('click', createEvent);
+
+            document.getElementById('button-container').addEventListener('click', (e) => {
+                if (e.target.closest('button[data-action="send-email"]')) {
+                    const btn = e.target.closest('button');
+                    sendTicketEmail(btn.dataset.bookingId, btn.dataset.event);
+                } else if (e.target.closest('button[data-action="check-in"]')) {
+                    checkInTicket(e.target.closest('button').dataset.bookingId);
+                }
+            });
+
+            updateStats();
+            showSection('validate-ticket');
+        });
+    </script>
+</body>
+</html>

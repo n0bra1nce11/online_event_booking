@@ -1,0 +1,744 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex));
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+</script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EventsNepal - Vibrant Events in Nepal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+        body {
+            line-height: 1.6;
+            color: #333;
+        }
+        header {
+            background-color: #1a3c34;
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .logo i {
+            font-size: 2rem;
+            color: #f4d03f;
+        }
+        .logo h1 {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        .validate-btn {
+            background-color: #f4d03f;
+            color: #1a3c34;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        .validate-btn:hover {
+            background-color: #d4a017;
+        }
+        .hamburger {
+            display: none;
+            font-size: 1.8rem;
+            cursor: pointer;
+            color: #f4d03f;
+        }
+        .nav-menu {
+            display: flex;
+            align-items: center;
+        }
+        .nav-menu.active {
+            display: block;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            max-width: 450px;
+            width: 90%;
+            text-align: left;
+        }
+        .modal-content h2 {
+            color: #1a3c34;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+        .modal-content label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #1a3c34;
+            font-weight: bold;
+        }
+        .modal-content input {
+            width: 100%;
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+        .modal-content input:focus {
+            outline: none;
+            border-color: #f4d03f;
+            box-shadow: 0 0 5px rgba(244, 208, 63, 0.5);
+        }
+        .modal-content button {
+            background-color: #f4d03f;
+            color: #1a3c34;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 0.5rem;
+            transition: background-color 0.3s;
+        }
+        .modal-content button:hover {
+            background-color: #d4a017;
+        }
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #1a3c34;
+        }
+        #qr-code {
+            margin: 1rem auto;
+            text-align: center;
+        }
+        .quantity-control {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .quantity-control button {
+            width: 40px;
+            height: 40px;
+            font-size: 1.2rem;
+        }
+        .quantity-control input {
+            width: 60px;
+            text-align: center;
+            padding: 0.5rem;
+        }
+        .sold-out {
+            color: red;
+            font-weight: bold;
+            pointer-events: none;
+            text-decoration: none;
+        }
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        .form-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1.5rem;
+        }
+        #booking-result {
+            margin-top: 1rem;
+            text-align: center;
+        }
+        .hero {
+            height: 100vh;
+            background: url('https://images.unsplash.com/photo-1506152983158-b4a74a01c721') no-repeat center center/cover;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: white;
+            margin-top: 70px;
+        }
+        .hero-content {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 2rem;
+            border-radius: 10px;
+        }
+        .hero h2 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        .hero p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+        }
+        .cta-btn {
+            background-color: #f4d03f;
+            color: #1a3c34;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .cta-btn:hover {
+            background-color: #d4a017;
+        }
+        .events {
+            padding: 4rem 2rem;
+            background-color: #f9f9f9;
+        }
+        .events h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            color: #1a3c34;
+        }
+        .events-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .event-card {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s;
+        }
+        .event-card:hover {
+            transform: translateY(-5px);
+        }
+        .event-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        .event-card-content {
+            padding: 1.5rem;
+        }
+        .event-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .event-card p {
+            color: #666;
+            margin-bottom: 1rem;
+        }
+        .event-card a {
+            color: #f4d03f;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        footer {
+            background-color: #1a3c34;
+            color: white;
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            text-align: left;
+        }
+        .footer-section h3 {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            color: #f4d03f;
+        }
+        .footer-section p, .footer-section a {
+            color: #ddd;
+            margin-bottom: 0.5rem;
+            text-decoration: none;
+        }
+        .footer-section a:hover {
+            color: #f4d03f;
+        }
+        .social-icons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .social-icons a {
+            color: white;
+            font-size: 1.5rem;
+            transition: color 0.3s;
+        }
+        .social-icons a:hover {
+            color: #f4d03f;
+        }
+        .esewa-partner {
+            margin-top: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .esewa-partner img {
+            height: 40px;
+        }
+        .footer-bottom {
+            margin-top: 2rem;
+            border-top: 1px solid #ddd;
+            padding-top: 1rem;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #bbb;
+        }
+        @media (max-width: 768px) {
+            .hero h2 {
+                font-size: 2rem;
+            }
+            .hero p {
+                font-size: 1rem;
+            }
+            header {
+                flex-wrap: wrap;
+            }
+            .hamburger {
+                display: block;
+            }
+            .nav-menu {
+                display: none;
+                width: 100%;
+                padding: 1rem 0;
+            }
+            .nav-menu.active {
+                display: block;
+            }
+            .validate-btn {
+                width: 100%;
+                text-align: center;
+                padding: 0.75rem;
+            }
+            .footer-content {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+            .social-icons {
+                justify-content: center;
+            }
+            .modal-content {
+                width: 95%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <i class="fa-solid fa-calendar-star"></i>
+            <h1>EventsNepal</h1>
+        </div>
+        <i class="fas fa-bars hamburger" onclick="toggleMenu()"></i>
+        <div class="nav-menu">
+            <button class="validate-btn" onclick="openModal('ticketModal')">Validate Ticket</button>
+        </div>
+    </header>
+
+    <!-- Validation Modal -->
+    <div id="ticketModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('ticketModal')">×</span>
+            <h2>Validate Your Ticket</h2>
+            <div class="form-group">
+                <label for="bookingId">Booking ID</label>
+                <input type="text" id="bookingId" placeholder="Enter Booking ID" />
+            </div>
+            <div class="form-group">
+                <label for="privateKey">Private Key</label>
+                <input type="text" id="privateKey" placeholder="Enter Private Key" />
+            </div>
+            <button onclick="validateTicket()">Validate</button>
+            <div id="qr-code"></div>
+            <div id="validation-result"></div>
+            <button id="download-qr" style="display: none;" onclick="downloadQR()">Download QR Code</button>
+        </div>
+    </div>
+
+    <!-- Booking Modal -->
+    <div id="bookingModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('bookingModal')">×</span>
+            <h2 id="booking-event-title">Book Your Ticket</h2>
+            <div class="form-group">
+                <label for="fullName">Full Name</label>
+                <input type="text" id="fullName" placeholder="Enter your full name" />
+            </div>
+            <div class="form-group">
+                <label for="phoneNumber">Phone Number</label>
+                <input type="tel" id="phoneNumber" placeholder="Enter your phone number" />
+            </div>
+            <div class="form-group">
+                <label for="emailAddress">Email Address</label>
+                <input type="email" id="emailAddress" placeholder="Enter your email address" />
+            </div>
+            <div class="form-group">
+                <label for="ticketQuantity">Ticket Quantity</label>
+                <div class="quantity-control">
+                    <button onclick="changeQuantity(-1)">-</button>
+                    <input type="text" id="ticketQuantity" value="1" readonly />
+                    <button onclick="changeQuantity(1)">+</button>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button onclick="closeModal('bookingModal')">Cancel</button>
+                <button onclick="confirmBooking()">Book Now</button>
+            </div>
+            <div id="booking-result"></div>
+        </div>
+    </div>
+
+    <section class="hero">
+        <div class="hero-content">
+            <h2>Discover Vibrant Events in Nepal</h2>
+            <p>Join us for unforgettable experiences, from cultural festivals to music concerts!</p>
+            <button class="cta-btn">Explore Events</button>
+        </div>
+    </section>
+
+    <section class="events">
+        <h2>Upcoming Events</h2>
+        <div class="events-grid">
+            <div class="event-card">
+                <img src="/images/uploads/cultural_festival.jpg" alt="Cultural Festival">
+                <div class="event-card-content">
+                    <h3>Cultural Festival 2025</h3>
+                    <p>Experience the rich traditions of Nepal with live performances and food stalls.</p>
+                    <p><strong>Date:</strong> July 15, 2025</p>
+                    <a href="#" class="book-now" data-event="Cultural Festival 2025" onclick="openBookingModal('Cultural Festival 2025')">Book Now</a>
+                </div>
+            </div>
+            <div class="event-card">
+                <img src="/images/uploads/music_concert.jpg" alt="Music Concert">
+                <div class="event-card-content">
+                    <h3>Mountain Music Concert</h3>
+                    <p>Enjoy live music under the stars with top Nepali artists.</p>
+                    <p><strong>Date:</strong> August 10, 2025</p>
+                    <a href="#" class="book-now" data-event="Mountain Music Concert" onclick="openBookingModal('Mountain Music Concert')">Book Now</a>
+                </div>
+            </div>
+            <div class="event-card">
+                <img src="/images/uploads/art_exhibition.jpg" alt="Art Exhibition">
+                <div class="event-card-content">
+                    <h3>Art & Craft Exhibition</h3>
+                    <p>Discover local artisans and their unique creations.</p>
+                    <p><strong>Date:</strong> September 5, 2025</p>
+                    <p class="sold-out">Sold Out</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>About EventsNepal</h3>
+                <p>EventsNepal is your premier platform for discovering and booking exciting events across Nepal, from cultural festivals to modern concerts.</p>
+            </div>
+            <div class="footer-section">
+                <h3>Contact Us</h3>
+                <p>Email: <a href="mailto:info@eventsnepal.com">info@eventsnepal.com</a></p>
+                <p>Phone: +977 123 456 789</p>
+                <p>Address: Kathmandu, Nepal</p>
+            </div>
+            <div class="footer-section">
+                <h3>Follow Us</h3>
+                <div class="social-icons">
+                    <a href="#"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                    <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                </div>
+                <div class="esewa-partner">
+                    <p>Payment Partner:</p>
+                    <img src="https://esewa.com.np/common/images/esewa_logo.png" alt="eSewa Logo">
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2025 EventsNepal. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Mock database (for fallback)
+        const validBookingIds = {
+            "EVENTNP_01": { event: "Cultural Festival 2025", date: "July 15, 2025" },
+            "EVENTNP_02": { event: "Mountain Music Concert", date: "August 10, 2025" },
+            "EVENTNP_03": { event: "Art & Craft Exhibition", date: "September 5, 2025" }
+        };
+
+        const eventAvailability = {
+            "Cultural Festival 2025": { available: true },
+            "Mountain Music Concert": { available: true },
+            "Art & Craft Exhibition": { available: false }
+        };
+
+        function openModal(modalId) {
+            document.getElementById(modalId).style.display = 'flex';
+            if (modalId === 'ticketModal') {
+                document.getElementById('bookingId').value = '';
+                document.getElementById('privateKey').value = '';
+                document.getElementById('validation-result').innerHTML = '';
+                document.getElementById('qr-code').innerHTML = '';
+                document.getElementById('download-qr').style.display = 'none';
+            } else if (modalId === 'bookingModal') {
+                document.getElementById('fullName').value = '';
+                document.getElementById('phoneNumber').value = '';
+                document.getElementById('emailAddress').value = '';
+                document.getElementById('ticketQuantity').value = '1';
+                document.getElementById('booking-result').innerHTML = '';
+            }
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        function validateTicket() {
+            const bookingId = document.getElementById('bookingId').value.trim();
+            const privateKey = document.getElementById('privateKey').value.trim();
+            const resultDiv = document.getElementById('validation-result');
+            const qrDiv = document.getElementById('qr-code');
+            const downloadBtn = document.getElementById('download-qr');
+
+            if (!bookingId || !privateKey) {
+                resultDiv.innerHTML = '<p style="color: red;">Please enter both Booking ID and Private Key.</p>';
+                return;
+            }
+
+            fetch('/api/tickets/validate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ booking_id: bookingId, private_key: privateKey })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.valid) {
+                        resultDiv.innerHTML = `
+                            <p style="color: green;">Valid Ticket! Event: ${data.event} on ${new Date(data.date).toLocaleDateString()}</p>
+                            <p>Name: ${data.booking.full_name}</p>
+                            <p>Email: ${data.booking.email_address}</p>
+                            <p>Tickets: ${data.booking.ticket_quantity}</p>
+                            <p>Status: ${data.booking.consumed ? 'Consumed' : 'Active'}</p>
+                        `;
+                        qrDiv.innerHTML = '';
+                        new QRCode(qrDiv, {
+                            text: `Booking ID: ${bookingId}, Event: ${data.event}, Date: ${data.date}`,
+                            width: 200,
+                            height: 200,
+                            colorDark: "#1a3c34",
+                            colorLight: "#ffffff"
+                        });
+                        downloadBtn.style.display = 'block';
+                    } else {
+                        resultDiv.innerHTML = `<p style="color: red;">${data.error}</p>`;
+                        qrDiv.innerHTML = '';
+                        downloadBtn.style.display = 'none';
+                    }
+                })
+                .catch(error => {
+                    resultDiv.innerHTML = '<p style="color: red;">Server error. Please try again.</p>';
+                    qrDiv.innerHTML = '';
+                    downloadBtn.style.display = 'none';
+                });
+        }
+
+        function downloadQR() {
+            const qrCanvas = document.querySelector('#qr-code canvas');
+            if (qrCanvas) {
+                const link = document.createElement('a');
+                link.href = qrCanvas.toDataURL('image/png');
+                link.download = 'ticket-qr-code.png';
+                link.click();
+            }
+        }
+
+        function openBookingModal(eventName) {
+            if (!eventAvailability[eventName].available) {
+                alert('This event is sold out!');
+                return;
+            }
+            document.getElementById('booking-event-title').textContent = `Book Your Ticket - ${eventName}`;
+            document.getElementById('bookingModal').setAttribute('data-event', eventName);
+            openModal('bookingModal');
+        }
+
+        function changeQuantity(change) {
+            const quantityInput = document.getElementById('ticketQuantity');
+            let quantity = parseInt(quantityInput.value);
+            quantity = Math.max(1, quantity + change);
+            quantityInput.value = quantity;
+        }
+
+        function confirmBooking() {
+            const fullName = document.getElementById('fullName').value.trim();
+            const phoneNumber = document.getElementById('phoneNumber').value.trim();
+            const emailAddress = document.getElementById('emailAddress').value.trim();
+            const ticketQuantity = document.getElementById('ticketQuantity').value;
+            const eventName = document.getElementById('bookingModal').getAttribute('data-event');
+            const resultDiv = document.getElementById('booking-result');
+
+            // Validation
+            if (!fullName) {
+                resultDiv.innerHTML = '<p style="color: red;">Please enter your full name.</p>';
+                return;
+            }
+            if (!phoneNumber || !/^\+?\d{10,}$/.test(phoneNumber)) {
+                resultDiv.innerHTML = '<p style="color: red;">Please enter a valid phone number (at least 10 digits).</p>';
+                return;
+            }
+            if (!emailAddress || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailAddress)) {
+                resultDiv.innerHTML = '<p style="color: red;">Please enter a valid email address.</p>';
+                return;
+            }
+
+            fetch('/api/bookings/book', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    event_name: eventName,
+                    full_name: fullName,
+                    phone_number: phoneNumber,
+                    email_address: emailAddress,
+                    ticket_quantity: parseInt(ticketQuantity)
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.booking) {
+                        resultDiv.innerHTML = `
+                            <p style="color: green;">Booking successful for ${ticketQuantity} ticket(s) to ${eventName}! Confirmation sent to ${emailAddress}.</p>
+                            <p><strong>Booking ID:</strong> ${data.booking.booking_id}</p>
+                            <p><strong>Private Key:</strong> ${data.private_key}</p>
+                        `;
+                        setTimeout(() => closeModal('bookingModal'), 5000);
+                    } else {
+                        resultDiv.innerHTML = `<p style="color: red;">${data.error}</p>`;
+                    }
+                })
+                .catch(error => {
+                    resultDiv.innerHTML = '<p style="color: red;">Server error. Please try again.</p>';
+                });
+        }
+
+        function toggleMenu() {
+            const navMenu = document.querySelector('.nav-menu');
+            navMenu.classList.toggle('active');
+        }
+
+        document.getElementById('ticketModal').addEventListener('click', function(event) {
+            if (event.target === this) {
+                closeModal('ticketModal');
+            }
+        });
+
+        document.getElementById('bookingModal').addEventListener('click', function(event) {
+            if (event.target === this) {
+                closeModal('bookingModal');
+            }
+        });
+    </script>
+</body>
+</html>

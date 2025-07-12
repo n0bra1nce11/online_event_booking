@@ -1,0 +1,454 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex));
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+</script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EventsNepal - Admin Login</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #1a3c34 0%, #2e5b52 50%, #1a3c34 100%);
+            background-size: 200% 200%;
+            animation: gradientShift 15s ease infinite;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .background-icons {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .background-icons i {
+            position: absolute;
+            color: rgba(244, 208, 63, 0.2);
+            font-size: 2rem;
+            animation: float 10s infinite ease-in-out;
+        }
+
+        .background-icons i:nth-child(1) { top: 10%; left: 15%; animation-delay: 0s; }
+        .background-icons i:nth-child(2) { top: 30%; left: 80%; animation-delay: 2s; }
+        .background-icons i:nth-child(3) { top: 60%; left: 25%; animation-delay: 4s; }
+        .background-icons i:nth-child(4) { top: 80%; left: 70%; animation-delay: 6s; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(10deg); }
+        }
+
+        .login-container {
+            background: #ffffff;
+            padding: 3rem;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            max-width: 420px;
+            width: 90%;
+            text-align: center;
+            animation: slideIn 0.6s ease-in-out;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            position: relative;
+            z-index: 1;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .login-container .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 2rem;
+        }
+
+        .login-container .logo i {
+            font-size: 3rem;
+            color: #f4d03f;
+            transition: transform 0.3s, color 0.3s;
+        }
+
+        .login-container .logo i:hover {
+            transform: rotate(360deg);
+            color: #d4a017;
+        }
+
+        .login-container h2 {
+            color: #1a3c34;
+            margin-bottom: 2rem;
+            font-size: 1.8rem;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-group {
+            margin-bottom: 1.8rem;
+            position: relative;
+        }
+
+        .form-group label {
+            position: absolute;
+            top: 0.75rem;
+            left: 2.5rem;
+            color: #1a3c34;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+
+        .form-group input:focus + label,
+        .form-group input:not(:placeholder-shown) + label {
+            top: -1.2rem;
+            left: 1rem;
+            font-size: 0.8rem;
+            color: #f4d03f;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem 0.75rem 0.75rem 2.5rem;
+            border: none;
+            border-bottom: 2px solid #ccc;
+            background: transparent;
+            color: #1a3c34;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-bottom-color: #f4d03f;
+        }
+
+        .form-group input::placeholder {
+            color: transparent;
+        }
+
+        .form-group i {
+            position: absolute;
+            left: 0.75rem;
+            top: 0.75rem;
+            color: #f4d03f;
+            font-size: 1rem;
+            transition: transform 0.3s, color 0.3s;
+        }
+
+        .form-group input:focus ~ i {
+            transform: scale(1.2);
+            color: #d4a017;
+        }
+
+        .login-btn {
+            background: linear-gradient(45deg, #f4d03f 30%, #d4a017 100%);
+            color: #1a3c34;
+            padding: 0.75rem 1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 80%;
+            margin: 0 auto;
+            font-size: 1rem;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: transform 0.3s, box-shadow 0.3s;
+            animation: pulseGlow 2s infinite ease-in-out;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 5px rgba(244, 208, 63, 0.4); }
+            50% { box-shadow: 0 0 20px rgba(244, 208, 63, 0.8); }
+        }
+
+        .login-btn:hover {
+            transform: scale(1.05);
+            background: linear-gradient(45deg, #d4a017 30%, #f4d03f 100%);
+            box-shadow: 0 0 25px rgba(244, 208, 63, 0.9);
+        }
+
+        .login-btn:hover i {
+            animation: bounce 0.5s ease;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        .login-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            box-shadow: none;
+            animation: none;
+        }
+
+        .login-btn i {
+            font-size: 1.1rem;
+            transition: transform 0.3s;
+        }
+
+        .spinner {
+            display: none;
+            border: 4px solid #ffffff;
+            border-top: 4px solid #1a3c34;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        @keyframes spin {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        .login-btn.loading .spinner {
+            display: block;
+        }
+
+        .login-btn.loading span,
+        .login-btn.loading i {
+            visibility: hidden;
+        }
+
+        #login-result {
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+            color: #1a3c34;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            opacity: 0;
+            animation: fadeInMessage 0.5s forwards;
+        }
+
+        #login-result.success i {
+            color: #28a745;
+            font-size: 1.2rem;
+        }
+
+        #login-result.error i {
+            color: #dc3545;
+            font-size: 1.2rem;
+        }
+
+        @keyframes fadeInMessage {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 768px) {
+            .login-container {
+                width: 95%;
+                padding: 2rem;
+            }
+
+            .login-container h2 {
+                font-size: 1.5rem;
+            }
+
+            .login-container .logo i {
+                font-size: 2rem;
+            }
+
+            .background-icons i {
+                font-size: 1.5rem;
+            }
+
+            .login-btn {
+                width: 85%;
+                font-size: 0.9rem;
+                padding: 0.65rem 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="background-icons">
+        <i class="fa-solid fa-calendar-days"></i>
+        <i class="fa-solid fa-ticket"></i>
+        <i class="fa-solid fa-star"></i>
+        <i class="fa-solid fa-music"></i>
+    </div>
+    <div class="login-container">
+        <div class="logo">
+            <i class="fa-solid fa-calendar-star"></i>
+        </div>
+        <h2>Admin Login</h2>
+        <div class="form-group">
+            <input type="text" id="username" placeholder="Username" />
+            <label for="username">Username</label>
+            <i class="fas fa-user"></i>
+        </div>
+        <div class="form-group">
+            <input type="password" id="password" placeholder="Password" />
+            <label for="password">Password</label>
+            <i class="fas fa-lock"></i>
+        </div>
+        <button class="login-btn" onclick="adminLogin()" id="login-btn">
+            <span>Login</span>
+            <i class="fas fa-sign-in-alt"></i>
+            <div class="spinner"></div>
+        </button>
+        <div id="login-result"></div>
+    </div>
+
+    <script>
+        function adminLogin() {
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const resultDiv = document.getElementById('login-result');
+            const loginBtn = document.getElementById('login-btn');
+
+            // Validation
+            if (!username) {
+                resultDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i><span class="error">Please enter a username.</span>';
+                resultDiv.className = 'error';
+                return;
+            }
+            if (!password) {
+                resultDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i><span class="error">Please enter a password.</span>';
+                resultDiv.className = 'error';
+                return;
+            }
+
+            // Show loading state
+            loginBtn.disabled = true;
+            loginBtn.classList.add('loading');
+
+            fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.token) {
+                        localStorage.setItem('token', data.token);
+                        resultDiv.innerHTML = '<i class="fas fa-check-circle"></i><span class="success">Login successful! Redirecting to admin dashboard...</span>';
+                        resultDiv.className = 'success';
+                        setTimeout(() => {
+                            resultDiv.innerHTML = '';
+                            document.getElementById('username').value = '';
+                            document.getElementById('password').value = '';
+                            window.location.href = 'dashboard.html';
+                        }, 1500);
+                    } else {
+                        resultDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i><span class="error">${data.error}</span>`;
+                        resultDiv.className = 'error';
+                    }
+                    loginBtn.disabled = false;
+                    loginBtn.classList.remove('loading');
+                })
+                .catch(error => {
+                    resultDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i><span class="error">Server error. Please try again.</span>';
+                    resultDiv.className = 'error';
+                    loginBtn.disabled = false;
+                    loginBtn.classList.remove('loading');
+                });
+        }
+    </script>
+</body>
+</html>
