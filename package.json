@@ -1,0 +1,30 @@
+{
+  "name": "events-nepal",
+  "version": "1.0.0",
+  "description": "EventsNepal: A platform for discovering and booking events in Nepal",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "start:frontend": "http-server public -p 8080",
+    "start:full": "concurrently \"npm run start\" \"npm run start:frontend\""
+  },
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.4.0",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "node-forge": "^1.3.1",
+    "pg": "^8.12.0",
+    "winston": "^3.13.1"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "http-server": "^14.1.1",
+    "nodemon": "^3.1.4"
+  }
+}
