@@ -46,7 +46,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -296,6 +295,7 @@
             display: flex;
             flex-wrap: wrap;
             gap: 2rem;
+            align enx
             align-items: flex-start;
             margin-top: 1rem;
         }
@@ -424,6 +424,7 @@
             color: #f4d03f;
         }
 
+        /* Responsive Design */
         @media (max-width: 768px) {
             .nav-bar {
                 width: 100%;
@@ -566,19 +567,20 @@
             <i class="fa-solid fa-calendar-star"></i>
             <span>EventsNepal</span>
         </div>
-        <button class="logout-btn" id="logout-btn">Logout <i class="fas fa-sign-out-alt"></i></button>
+        <button class="logout-btn" onclick="logout()">Logout <i class="fas fa-sign-out-alt"></i></button>
     </header>
 
     <nav class="nav-bar">
         <ul>
-            <li class="active" data-section="validate-ticket"><i class="fas fa-ticket-alt"></i> Validate Ticket</li>
-            <li data-section="qr-scanner"><i class="fas fa-qrcode"></i> Scan QR Code</li>
-            <li data-section="create-event"><i class="fas fa-calendar-plus"></i> Create Event</li>
-            <li data-section="event-stats"><i class="fas fa-chart-bar"></i> Event Statistics</li>
+            <li class="active" onclick="showSection('validate-ticket')"><i class="fas fa-ticket-alt"></i> Validate Ticket</li>
+            <li onclick="showSection('qr-scanner')"><i class="fas fa-qrcode"></i> Scan QR Code</li>
+            <li onclick="showSection('create-event')"><i class="fas fa-calendar-plus"></i> Create Event</li>
+            <li onclick="showSection('event-stats')"><i class="fas fa-chart-bar"></i> Event Statistics</li>
         </ul>
     </nav>
 
     <section class="dashboard">
+        <!-- Ticket Validation Section -->
         <div class="section active" id="validate-ticket">
             <h2>Validate Ticket</h2>
             <div class="form-group">
@@ -586,8 +588,8 @@
                 <input type="text" id="bookingId" placeholder="Enter Booking ID (e.g., EVENTNP_01)" />
             </div>
             <div class="input-container">
-                <button class="btn" id="validate-btn"><i class="fas fa-ticket-alt"></i> <span>Check Ticket</span> <div class="spinner"></div></button>
-                <button class="btn" id="clear-btn"><i class="fas fa-eraser"></i> <span>Clear</span></button>
+                <button class="btn" onclick="validateTicket()" id="validate-btn"><i class="fas fa-ticket-alt"></i> <span>Check Ticket</span> <div class="spinner"></div></button>
+                <button class="btn" onclick="clearTicketForm()" id="clear-btn"><i class="fas fa-eraser"></i> <span>Clear</span></button>
             </div>
             <div class="ticket-container">
                 <div id="ticket-result" class="ticket-details">
@@ -598,16 +600,18 @@
             </div>
         </div>
 
+        <!-- QR Code Scanner Section -->
         <div class="section" id="qr-scanner">
             <h2>Scan QR Code</h2>
             <div id="qr-scanner">
                 <video id="video" autoplay></video>
-                <button class="btn" id="start-scanner"><i class="fas fa-qrcode"></i> Start Scanner</button>
-                <button class="btn" id="stop-scanner" style="display: none;"><i class="fas fa-stop"></i> Stop Scanner</button>
+                <button class="btn" onclick="startScanner()"><i class="fas fa-qrcode"></i> Start Scanner</button>
+                <button class="btn" onclick="stopScanner()" style="display: none;" id="stop-scanner"><i class="fas fa-stop"></i> Stop Scanner</button>
             </div>
             <div id="ticket-result"></div>
         </div>
 
+        <!-- Create Event Section -->
         <div class="section" id="create-event">
             <h2>Create New Event</h2>
             <div class="form-group">
@@ -630,141 +634,141 @@
                 <label for="eventBanner">Banner Image</label>
                 <input type="file" id="eventBanner" accept="image/*" />
             </div>
-            <button class="btn" id="create-event-btn"><i class="fas fa-calendar-plus"></i> Create Event</button>
+            <button class="btn" onclick="createEvent()"><i class="fas fa-calendar-plus"></i> Create Event</button>
             <div id="event-result"></div>
         </div>
 
+        <!-- Event Statistics Section -->
         <div class="section" id="event-stats">
             <h2>Event Statistics</h2>
-            <div class="stats-grid"></div>
+            <div class="stats-grid">
+                <!-- Populated dynamically -->
+            </div>
         </div>
     </section>
 
     <script>
-        var gk_isXlsx = false;
-        var gk_xlsxFileLookup = {};
-        var gk_fileData = {};
-        function filledCell(cell) {
-            return cell !== '' && cell != null;
-        }
-        function loadFileData(filename) {
-            if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-                try {
-                    var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-                    var firstSheetName = workbook.SheetNames[0];
-                    var worksheet = workbook.Sheets[firstSheetName];
-                    var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                    var filteredData = jsonData.filter(row => row.some(filledCell));
-                    var headerRowIndex = filteredData.findIndex((row, index) =>
-                        row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-                    );
-                    if (headerRowIndex === -1 || headerRowIndex > 25) {
-                        headerRowIndex = 0;
-                    }
-                    var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex));
-                    csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-                    return csv;
-                } catch (e) {
-                    console.error(e);
-                    return "";
+        // Mock data with booking IDs following EVENTNP_XX pattern
+        const eventsData = {
+            "Cultural Festival 2025": {
+                date: "2025-07-15T18:00:00+05:45",
+                totalTickets: 200,
+                ticketsSold: 150,
+                totalSales: 150000,
+                bookings: {
+                    "EVENTNP_01": { name: "John Doe", email: "john@example.com", tickets: 2, consumed: false }
+                }
+            },
+            "Mountain Music Concert": {
+                date: "2025-08-10T19:00:00+05:45",
+                totalTickets: 300,
+                ticketsSold: 200,
+                totalSales: 200000,
+                bookings: {
+                    "EVENTNP_02": { name: "Jane Smith", email: "jane@example.com", tickets: 3, consumed: false }
+                }
+            },
+            "Art & Craft Exhibition": {
+                date: "2025-09-05T14:00:00+05:45",
+                totalTickets: 150,
+                ticketsSold: 100,
+                totalSales: 100000,
+                bookings: {
+                    "EVENTNP_03": { name: "Alice Brown", email: "alice@example.com", tickets: 1, consumed: false }
                 }
             }
-            return gk_fileData[filename] || "";
-        }
+        };
 
         let stream = null;
 
         function showSection(sectionId) {
-            document.querySelectorAll('.section').forEach(section => section.classList.remove('active'));
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
             document.getElementById(sectionId).classList.add('active');
-            document.querySelectorAll('.nav-bar li').forEach(li => li.classList.remove('active'));
-            document.querySelector(`.nav-bar li[data-section="${sectionId}"]`).classList.add('active');
-            if (sectionId === 'event-stats') updateStats();
+
+            document.querySelectorAll('.nav-bar li').forEach(li => {
+                li.classList.remove('active');
+            });
+            document.querySelector(`.nav-bar li[onclick="showSection('${sectionId}')"]`).classList.add('active');
         }
 
         function logout() {
-            localStorage.removeItem('token');
+            alert('Logged out successfully!');
             window.location.href = 'admin.html';
         }
 
-        function setLoadingState(buttonId, isLoading) {
-            const btn = document.getElementById(buttonId);
-            btn.disabled = isLoading;
-            btn.classList.toggle('loading', isLoading);
+        function setLoadingState(isLoading) {
+            const validateBtn = document.getElementById('validate-btn');
+            validateBtn.disabled = isLoading;
+            validateBtn.classList.toggle('loading', isLoading);
         }
 
         function validateTicket() {
-            setLoadingState('validate-btn', true);
+            setLoadingState(true);
             const bookingId = document.getElementById('bookingId').value.trim();
             const ticketInfoDiv = document.querySelector('.ticket-info');
             const qrCodeDiv = document.getElementById('qr-code');
             const buttonContainer = document.getElementById('button-container');
-            const token = localStorage.getItem('token');
 
             if (!bookingId) {
                 ticketInfoDiv.innerHTML = '<p class="error"><i class="fas fa-exclamation-circle"></i> Please enter a booking ID.</p>';
                 qrCodeDiv.innerHTML = '';
                 buttonContainer.innerHTML = '';
-                setLoadingState('validate-btn', false);
+                setLoadingState(false);
                 return;
             }
 
-            fetch('/api/tickets/validate', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ booking_id: bookingId, private_key: 'server-side-validation' })
-            })
-            .then(response => {
-                if (!response.ok) throw new Error('Network response was not ok');
-                return response.json();
-            })
-            .then(data => {
-                if (data.valid) {
-                    ticketInfoDiv.innerHTML = `
-                        <p class="success"><i class="fas fa-ticket-alt"></i> Ticket found!</p>
-                        <p><span class="label">Event:</span> <span class="value">${data.event}</span></p>
-                        <p><span class="label">Name:</span> <span class="value">${data.booking.full_name}</span></p>
-                        <p><span class="label">Email:</span> <span class="value">${data.booking.email_address}</span></p>
-                        <p><span class="label">Tickets:</span> <span class="value">${data.booking.ticket_quantity}</span></p>
-                        <p><span class="label">Status:</span> <span class="value">${data.booking.consumed ? 'Consumed' : 'Active'}</span></p>
-                    `;
-                    const buttons = data.booking.consumed
-                        ? ''
-                        : `
-                            <div class="form-group">
-                                <label for="emailInput">Email for Ticket</label>
-                                <input type="email" class="email-input" id="emailInput" placeholder="Enter email" value="${data.booking.email_address}" />
-                            </div>
-                            <button class="btn" data-action="send-email" data-booking-id="${bookingId}" data-event="${data.event}"><i class="fas fa-envelope"></i> Send Ticket Email</button>
-                            <button class="btn" data-action="check-in" data-booking-id="${bookingId}"><i class="fas fa-check"></i> Check In</button>
+            setTimeout(() => {
+                let found = false;
+                for (const event in eventsData) {
+                    if (eventsData[event].bookings[bookingId]) {
+                        found = true;
+                        const ticket = eventsData[event].bookings[bookingId];
+
+                        ticketInfoDiv.innerHTML = `
+                            <p class="success"><i class="fas fa-ticket-alt"></i> Ticket found!</p>
+                            <p><span class="label">Event:</span> <span class="value">${event}</span></p>
+                            <p><span class="label">Name:</span> <span class="value">${ticket.name}</span></p>
+                            <p><span class="label">Email:</span> <span class="value">${ticket.email}</span></p>
+                            <p><span class="label">Tickets:</span> <span class="value">${ticket.tickets}</span></p>
+                            <p><span class="label">Status:</span> <span class="value">${ticket.consumed ? 'Consumed' : 'Active'}</span></p>
                         `;
-                    buttonContainer.innerHTML = buttons;
-                    qrCodeDiv.innerHTML = '';
-                    new QRCode(qrCodeDiv, {
-                        text: `Booking ID: ${bookingId}`,
-                        width: 128,
-                        height: 128,
-                        colorDark: "#1a3c34",
-                        colorLight: "#ffffff",
-                        correctLevel: QRCode.CorrectLevel.H
-                    });
-                } else {
-                    ticketInfoDiv.innerHTML = `<p class="error"><i class="fas fa-exclamation-circle"></i> ${data.error || 'Invalid Booking ID'}</p>`;
+
+                        const buttons = ticket.consumed
+                            ? ''
+                            : `
+                                <div class="form-group">
+                                    <label for="emailInput">Email for Ticket</label>
+                                    <input type="email" class="email-input" id="emailInput" placeholder="Enter email" value="${ticket.email}" />
+                                </div>
+                                <button class="btn" onclick="sendTicketEmail('${bookingId}', '${event}')"><i class="fas fa-envelope"></i> Send Ticket Email</button>
+                                <button class="btn" onclick="checkInTicket('${bookingId}', '${event}')"><i class="fas fa-check"></i> Check In</button>
+                            `;
+
+                        buttonContainer.innerHTML = buttons;
+
+                        // Generate QR code
+                        qrCodeDiv.innerHTML = '';
+                        const qrCode = new QRCode(qrCodeDiv, {
+                            text: `Booking ID: ${bookingId}`,
+                            width: 128,
+                            height: 128,
+                            colorDark: "#1a3c34",
+                            colorLight: "#ffffff",
+                            correctLevel: QRCode.CorrectLevel.H
+                        });
+                        break;
+                    }
+                }
+
+                if (!found) {
+                    ticketInfoDiv.innerHTML = '<p class="error"><i class="fas fa-exclamation-circle"></i> Invalid Booking ID.</p>';
                     qrCodeDiv.innerHTML = '';
                     buttonContainer.innerHTML = '';
                 }
-                setLoadingState('validate-btn', false);
-            })
-            .catch(error => {
-                ticketInfoDiv.innerHTML = '<p class="error"><i class="fas fa-exclamation-circle"></i> Server error. Please try again.</p>';
-                qrCodeDiv.innerHTML = '';
-                buttonContainer.innerHTML = '';
-                setLoadingState('validate-btn', false);
-                console.error('Validate Ticket Error:', error);
-            });
+                setLoadingState(false);
+            }, 500); // Simulate loading delay
         }
 
         function clearTicketForm() {
@@ -775,90 +779,47 @@
         }
 
         function sendTicketEmail(bookingId, eventName) {
-            setLoadingState('validate-btn', true);
-            const email = document.getElementById('emailInput')?.value.trim();
+            setLoadingState(true);
+            const email = document.getElementById('emailInput')?.value.trim() || eventsData[eventName].bookings[bookingId].email;
             const ticketInfoDiv = document.querySelector('.ticket-info');
-            const token = localStorage.getItem('token');
-
             if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
                 ticketInfoDiv.innerHTML = '<p class="error"><i class="fas fa-exclamation-circle"></i> Please enter a valid email address.</p>';
-                setLoadingState('validate-btn', false);
+                setLoadingState(false);
                 return;
             }
-
-            fetch('/api/tickets/send-email', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ booking_id: bookingId, email })
-            })
-            .then(response => {
-                if (!response.ok) throw new Error('Network response was not ok');
-                return response.json();
-            })
-            .then(data => {
-                ticketInfoDiv.innerHTML = `<p class="success"><i class="fas fa-envelope"></i> ${data.message}</p>`;
+            setTimeout(() => {
+                ticketInfoDiv.innerHTML = `<p class="success"><i class="fas fa-envelope"></i> Ticket email sent for ${bookingId} to ${email}!</p>`;
                 document.getElementById('qr-code').innerHTML = '';
                 document.getElementById('button-container').innerHTML = '';
-                setLoadingState('validate-btn', false);
+                setLoadingState(false);
                 setTimeout(() => validateTicket(), 2000);
-            })
-            .catch(error => {
-                ticketInfoDiv.innerHTML = '<p class="error"><i class="fas fa-exclamation-circle"></i> Server error. Please try again.</p>';
-                setLoadingState('validate-btn', false);
-                console.error('Send Ticket Email Error:', error);
-            });
+            }, 500);
         }
 
-        function checkInTicket(bookingId) {
-            setLoadingState('validate-btn', true);
-            const ticketInfoDiv = document.querySelector('.ticket-info');
-            const token = localStorage.getItem('token');
-
-            fetch('/api/tickets/check-in', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ booking_id: bookingId })
-            })
-            .then(response => {
-                if (!response.ok) throw new Error('Network response was not ok');
-                return response.json();
-            })
-            .then(data => {
-                ticketInfoDiv.innerHTML = `<p class="success"><i class="fas fa-check-circle"></i> ${data.message}</p>`;
+        function checkInTicket(bookingId, eventName) {
+            setLoadingState(true);
+            setTimeout(() => {
+                eventsData[eventName].bookings[bookingId].consumed = true;
+                const ticketInfoDiv = document.querySelector('.ticket-info');
+                ticketInfoDiv.innerHTML = `<p class="success"><i class="fas fa-check-circle"></i> Ticket ${bookingId} checked in successfully!</p>`;
                 document.getElementById('qr-code').innerHTML = '';
                 document.getElementById('button-container').innerHTML = '';
-                setLoadingState('validate-btn', false);
+                setLoadingState(false);
                 setTimeout(() => validateTicket(), 2000);
-            })
-            .catch(error => {
-                ticketInfoDiv.innerHTML = '<p class="error"><i class="fas fa-exclamation-circle"></i> Server error. Please try again.</p>';
-                setLoadingState('validate-btn', false);
-                console.error('Check In Ticket Error:', error);
-            });
+            }, 500);
         }
 
         async function startScanner() {
             const video = document.getElementById('video');
-            const startBtn = document.getElementById('start-scanner');
             const stopBtn = document.getElementById('stop-scanner');
-            const resultDiv = document.getElementById('ticket-result');
-
             try {
                 stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
                 video.srcObject = stream;
-                startBtn.style.display = 'none';
                 stopBtn.style.display = 'inline-flex';
                 video.play();
                 requestAnimationFrame(tick);
             } catch (err) {
-                resultDiv.innerHTML = '<p class="error"><i class="fas fa-exclamation-circle"></i> Unable to access camera. Please ensure camera permissions are granted.</p>';
-                console.error('Start Scanner Error:', err);
+                document.getElementById('ticket-result').innerHTML = '<p class="error"><i class="fas fa-exclamation-circle"></i> Unable to access camera. Please ensure camera permissions are granted.</p>';
             }
         }
 
@@ -868,7 +829,6 @@
                 stream = null;
             }
             document.getElementById('video').srcObject = null;
-            document.getElementById('start-scanner').style.display = 'inline-flex';
             document.getElementById('stop-scanner').style.display = 'none';
             document.getElementById('ticket-result').innerHTML = '';
         }
@@ -876,7 +836,6 @@
         function tick() {
             const video = document.getElementById('video');
             const resultDiv = document.getElementById('ticket-result');
-            const token = localStorage.getItem('token');
 
             if (video.readyState === video.HAVE_ENOUGH_DATA) {
                 const canvas = document.createElement('canvas');
@@ -890,38 +849,23 @@
                 if (code) {
                     const bookingId = code.data.match(/Booking ID: (EVENTNP_\d{2})/)?.[1];
                     if (bookingId) {
-                        fetch('/api/tickets/scan', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${token}`
-                            },
-                            body: JSON.stringify({ booking_id: bookingId })
-                        })
-                        .then(response => {
-                            if (!response.ok) throw new Error('Network response was not ok');
-                            return response.json();
-                        })
-                        .then(data => {
-                            if (data.message) {
-                                resultDiv.innerHTML = `
-                                    <p class="success"><i class="fas fa-check-circle"></i> ${data.message}</p>
-                                    <p>Event: ${data.event}</p>
-                                    <p>Name: ${data.booking.full_name}</p>
-                                    <p>Email: ${data.booking.email_address}</p>
-                                    <p>Tickets: ${data.booking.ticket_quantity}</p>
-                                `;
-                                stopScanner();
-                            } else {
-                                resultDiv.innerHTML = `<p class="error"><i class="fas fa-exclamation-circle"></i> ${data.error || 'Invalid QR code'}</p>`;
+                        let found = false;
+                        for (const event in eventsData) {
+                            if (eventsData[event].bookings[bookingId]) {
+                                found = true;
+                                if (eventsData[event].bookings[bookingId].consumed) {
+                                    resultDiv.innerHTML = `<p class="error"><i class="fas fa-exclamation-circle"></i> Ticket ${bookingId} already consumed.</p>`;
+                                } else {
+                                    eventsData[event].bookings[bookingId].consumed = true;
+                                    resultDiv.innerHTML = `<p class="success"><i class="fas fa-check-circle"></i> Ticket ${bookingId} checked in successfully!</p>`;
+                                    stopScanner();
+                                }
+                                break;
                             }
-                        })
-                        .catch(error => {
-                            resultDiv.innerHTML = '<p class="error"><i class="fas fa-exclamation-circle"></i> Server error. Please try again.</p>';
-                            console.error('QR Scan Error:', error);
-                        });
-                    } else {
-                        resultDiv.innerHTML = `<p class="error"><i class="fas fa-exclamation-circle"></i> Invalid QR code.</p>`;
+                        }
+                        if (!found) {
+                            resultDiv.innerHTML = `<p class="error"><i class="fas fa-exclamation-circle"></i> Invalid QR code.</p>`;
+                        }
                     }
                 }
             }
@@ -929,126 +873,64 @@
         }
 
         function createEvent() {
-            setLoadingState('create-event-btn', true);
             const eventName = document.getElementById('eventName').value.trim();
             const eventDate = document.getElementById('eventDate').value;
             const eventDescription = document.getElementById('eventDescription').value.trim();
             const eventTotalTickets = document.getElementById('eventTotalTickets').value.trim();
             const eventBanner = document.getElementById('eventBanner').files[0];
             const resultDiv = document.getElementById('event-result');
-            const token = localStorage.getItem('token');
 
             if (!eventName || !eventDate || !eventDescription || !eventTotalTickets || !eventBanner) {
                 resultDiv.innerHTML = '<p class="error"><i class="fas fa-exclamation-circle"></i> Please fill all fields and upload a banner image.</p>';
-                setLoadingState('create-event-btn', false);
                 return;
             }
 
             const totalTickets = parseInt(eventTotalTickets);
             if (isNaN(totalTickets) || totalTickets <= 0) {
                 resultDiv.innerHTML = '<p class="error"><i class="fas fa-exclamation-circle"></i> Total tickets must be a positive number.</p>';
-                setLoadingState('create-event-btn', false);
                 return;
             }
 
-            const formData = new FormData();
-            formData.append('name', eventName);
-            formData.append('date', new Date(eventDate).toISOString());
-            formData.append('description', eventDescription);
-            formData.append('total_tickets', totalTickets);
-            formData.append('banner', eventBanner);
+            // Simulate event creation
+            eventsData[eventName] = {
+                date: new Date(eventDate).toISOString(),
+                totalTickets: totalTickets,
+                ticketsSold: 0,
+                totalSales: 0,
+                bookings: {}
+            };
 
-            fetch('/api/events/create', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` },
-                body: formData
-            })
-            .then(response => {
-                if (!response.ok) throw new Error('Network response was not ok');
-                return response.json();
-            })
-            .then(data => {
-                if (data.id) {
-                    resultDiv.innerHTML = `<p class="success"><i class="fas fa-check-circle"></i> Event "${eventName}" created successfully!</p>`;
-                    document.getElementById('eventName').value = '';
-                    document.getElementById('eventDate').value = '';
-                    document.getElementById('eventDescription').value = '';
-                    document.getElementById('eventTotalTickets').value = '';
-                    document.getElementById('eventBanner').value = '';
-                    setTimeout(() => { resultDiv.innerHTML = ''; }, 2000);
-                } else {
-                    resultDiv.innerHTML = `<p class="error"><i class="fas fa-exclamation-circle"></i> ${data.error || 'Failed to create event'}</p>`;
-                }
-                setLoadingState('create-event-btn', false);
-            })
-            .catch(error => {
-                resultDiv.innerHTML = '<p class="error"><i class="fas fa-exclamation-circle"></i> Server error. Please try again.</p>';
-                setLoadingState('create-event-btn', false);
-                console.error('Create Event Error:', error);
-            });
+            resultDiv.innerHTML = `<p class="success"><i class="fas fa-check-circle"></i> Event "${eventName}" created successfully!</p>`;
+            document.getElementById('eventName').value = '';
+            document.getElementById('eventDate').value = '';
+            document.getElementById('eventDescription').value = '';
+            document.getElementById('eventTotalTickets').value = '';
+            document.getElementById('eventBanner').value = '';
+            updateStats();
+            setTimeout(() => { resultDiv.innerHTML = ''; }, 2000);
         }
 
         function updateStats() {
             const statsGrid = document.querySelector('.stats-grid');
-            const token = localStorage.getItem('token');
-
-            fetch('/api/events/stats', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            })
-            .then(response => {
-                if (!response.ok) throw new Error('Network response was not ok');
-                return response.json();
-            })
-            .then(data => {
-                statsGrid.innerHTML = '';
-                data.forEach(event => {
-                    const statCard = document.createElement('div');
-                    statCard.className = 'stat-card';
-                    statCard.innerHTML = `
-                        <h3>${event.name}</h3>
-                        <p>Total Tickets: ${event.total_tickets}</p>
-                        <p>Tickets Sold: ${event.tickets_sold}</p>
-                        <p>Total Sales: NPR ${event.total_sales}</p>
-                    `;
-                    statsGrid.appendChild(statCard);
-                });
-            })
-            .catch(error => {
-                statsGrid.innerHTML = '<p class="error"><i class="fas fa-exclamation-circle"></i> Failed to load statistics.</p>';
-                console.error('Update Stats Error:', error);
-            });
+            statsGrid.innerHTML = '';
+            for (const event in eventsData) {
+                const statCard = document.createElement('div');
+                statCard.className = 'stat-card';
+                statCard.innerHTML = `
+                    <h3>${event}</h3>
+                    <p>Total Tickets: ${eventsData[event].totalTickets}</p>
+                    <p>Tickets Sold: ${eventsData[event].ticketsSold}</p>
+                    <p>Total Sales: NPR ${eventsData[event].totalSales}</p>
+                `;
+                statsGrid.appendChild(statCard);
+            }
         }
 
-        // Event Listeners
-        document.addEventListener('DOMContentLoaded', () => {
-            if (!localStorage.getItem('token')) {
-                window.location.href = 'admin.html';
-                return;
-            }
-
-            document.querySelectorAll('.nav-bar li').forEach(li => {
-                li.addEventListener('click', () => showSection(li.dataset.section));
-            });
-
-            document.getElementById('logout-btn').addEventListener('click', logout);
-            document.getElementById('validate-btn').addEventListener('click', validateTicket);
-            document.getElementById('clear-btn').addEventListener('click', clearTicketForm);
-            document.getElementById('start-scanner').addEventListener('click', startScanner);
-            document.getElementById('stop-scanner').addEventListener('click', stopScanner);
-            document.getElementById('create-event-btn').addEventListener('click', createEvent);
-
-            document.getElementById('button-container').addEventListener('click', (e) => {
-                if (e.target.closest('button[data-action="send-email"]')) {
-                    const btn = e.target.closest('button');
-                    sendTicketEmail(btn.dataset.bookingId, btn.dataset.event);
-                } else if (e.target.closest('button[data-action="check-in"]')) {
-                    checkInTicket(e.target.closest('button').dataset.bookingId);
-                }
-            });
-
+        // Initialize stats and default section on page load
+        window.onload = () => {
             updateStats();
             showSection('validate-ticket');
-        });
+        };
     </script>
 </body>
 </html>
