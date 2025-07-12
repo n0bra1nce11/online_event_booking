@@ -34,7 +34,7 @@ CREATE TABLE bookings (
 
 -- Insert mock data
 INSERT INTO admins (username, password) VALUES
-  ('admin', '$2b$10$z7Qz3X8y2v5n1f9X9z8y8eQz3X8y2v5n1f9X9z8y8eQz3X8y2v5n');
+  ('admin', '$2a$12$iK46oIpxFQz7.NcTP3TnbeOjZ6czbXbktVUhnsTMxrYtk1fQQfVMK');
 
 INSERT INTO events (name, date, description, total_tickets, tickets_sold, total_sales, banner_image, available) VALUES
   ('Cultural Festival 2025', '2025-07-15 18:00:00+05:45', 'Experience the rich traditions of Nepal with live performances and food stalls.', 200, 150, 150000, '/images/uploads/cultural_festival.jpg', true),
