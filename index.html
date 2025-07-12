@@ -534,34 +534,8 @@
 
     <section class="events">
         <h2>Upcoming Events</h2>
-        <div class="events-grid">
-            <div class="event-card">
-                <img src="https://images.unsplash.com/photo-1516455590571-18256e5bb9ff" alt="Cultural Festival">
-                <div class="event-card-content">
-                    <h3>Cultural Festival 2025</h3>
-                    <p>Experience the rich traditions of Nepal with live performances and food stalls.</p>
-                    <p><strong>Date:</strong> July 15, 2025</p>
-                    <a href="#" class="book-now" data-event="Cultural Festival 2025" onclick="openBookingModal('Cultural Festival 2025')">Book Now</a>
-                </div>
-            </div>
-            <div class="event-card">
-                <img src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819" alt="Music Concert">
-                <div class="event-card-content">
-                    <h3>Mountain Music Concert</h3>
-                    <p>Enjoy live music under the stars with top Nepali artists.</p>
-                    <p><strong>Date:</strong> August 10, 2025</p>
-                    <a href="#" class="book-now" data-event="data-event="Mountain Music Concert" onclick="openBookingModal('Mountain Music Concert')">Book Now</a>
-                </div>
-            </div>
-            <div class="event-card">
-                <img src="https://images.unsplash.com/photo-1501281668745-f7f57925c3b4" alt="Art Exhibition">
-                <div class="event-card-content">
-                    <h3>Art & Craft Exhibition</h3>
-                    <p>Discover local artisans and their unique creations.</p>
-                    <p><strong>Date:</strong> September 5, 2025</p>
-                    <p class="sold-out">Sold Out</p>
-                </div>
-            </div>
+        <div class="events-grid" id="events-grid">
+            <!-- Event cards will be dynamically inserted here -->
         </div>
     </section>
 
@@ -747,6 +721,41 @@
                 closeModal('bookingModal');
             }
         });
+
+        function loadEvents() {
+            const eventsGrid = document.getElementById('events-grid');
+            const events = JSON.parse(localStorage.getItem('events')) || [];
+
+            if (events.length === 0) {
+                eventsGrid.innerHTML = '<p>No upcoming events at the moment. Please check back later!</p>';
+                return;
+            }
+
+            events.forEach(event => {
+                const eventCard = document.createElement('div');
+                eventCard.className = 'event-card';
+
+                const eventDate = new Date(event.date);
+                const formattedDate = eventDate.toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+
+                eventCard.innerHTML = `
+                    <img src="${event.banner}" alt="${event.name}">
+                    <div class="event-card-content">
+                        <h3>${event.name}</h3>
+                        <p>${event.description}</p>
+                        <p><strong>Date:</strong> ${formattedDate}</p>
+                        <a href="#" class="book-now" data-event="${event.name}" onclick="openBookingModal('${event.name}')">Book Now</a>
+                    </div>
+                `;
+                eventsGrid.appendChild(eventCard);
+            });
+        }
+
+        window.onload = loadEvents;
     </script>
 </body>
 </html>

@@ -891,13 +891,22 @@
             }
 
             // Simulate event creation
-            eventsData[eventName] = {
+            const newEvent = {
+                name: eventName,
                 date: new Date(eventDate).toISOString(),
+                description: eventDescription,
                 totalTickets: totalTickets,
+                banner: URL.createObjectURL(eventBanner),
                 ticketsSold: 0,
                 totalSales: 0,
                 bookings: {}
             };
+
+            let events = JSON.parse(localStorage.getItem('events')) || [];
+            events.push(newEvent);
+            localStorage.setItem('events', JSON.stringify(events));
+
+            eventsData[eventName] = newEvent;
 
             resultDiv.innerHTML = `<p class="success"><i class="fas fa-check-circle"></i> Event "${eventName}" created successfully!</p>`;
             document.getElementById('eventName').value = '';
