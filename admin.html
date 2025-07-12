@@ -400,10 +400,7 @@
                     resultDiv.innerHTML = '<i class="fas fa-check-circle"></i><span class="success">Login successful! Redirecting to admin dashboard...</span>';
                     resultDiv.className = 'success';
                     setTimeout(() => {
-                        resultDiv.innerHTML = '';
-                        document.getElementById('username').value = '';
-                        document.getElementById('password').value = '';
-                        alert('Welcome to the Admin Dashboard!');
+                        window.location.href = 'dashboard.html';
                     }, 1500);
                 } else {
                     resultDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i><span class="error">Invalid username or password.</span>';
